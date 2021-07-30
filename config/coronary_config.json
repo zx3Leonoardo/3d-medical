@@ -1,0 +1,6 @@
+{
+    "subjects_filename":"/home/qinzixin/project/coronary/config/coronary_ids.json",
+    "img_directory":"/home/qinzixin/data/coronary/{subject}/Segmentation-lt-label.nii.gz",
+    "label_directory":"/home/qinzixin/data/coronary/{subject}/relabel_1.nii.gz"
+    
+}
