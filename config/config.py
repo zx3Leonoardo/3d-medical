@@ -18,6 +18,8 @@ parser.add_argument("--gpu_ids", default=[0,1])
 
 # train
 parser.add_argument("--lr", default=0.0001, metavar='LR')
+parser.add_argument("--epochs", default=200)
+parser.add_argument("--early_stop", default=30)
 
 
 arg = parser.parse_args()
