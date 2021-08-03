@@ -16,7 +16,7 @@ class Unet(nn.Module):
         self.decoder2 = nn.Conv3d(64, 32, 3, stride=1, padding=1)
         self.decoder1 = nn.Conv3d(32, 20, 3, stride=1, padding=1)
 
-        self.map3 = nn.Sequential(
+        self.map4 = nn.Sequential(
             nn.Conv3d(20, out_channel, 1, 1),
             nn.Upsample(scale_factor=(1,2,2), mode='trilinear'),
             nn.Softmax(dim=1)
@@ -40,11 +40,11 @@ class Unet(nn.Module):
     def forward(self,x):
         x = F.relu(F.max_pool3d(self.encoder1(x), 2, 2))
         t1 = x
-        x = F.relu(F.max_pool3d(self.encoder1(x), 2, 2))
+        x = F.relu(F.max_pool3d(self.encoder2(x), 2, 2))
         t2 = x
-        x = F.relu(F.max_pool3d(self.encoder1(x), 2, 2))
+        x = F.relu(F.max_pool3d(self.encoder3(x), 2, 2))
         t3 = x
-        x = F.relu(F.max_pool3d(self.encoder1(x), 2, 2))
+        x = F.relu(F.max_pool3d(self.encoder4(x), 2, 2))
 
         output1 = self.map1(x)
         x = F.relu(F.interpolate(self.decoder4(x), scale_factor=(2,2,2), mode='trilinear'))

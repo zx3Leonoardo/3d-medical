@@ -8,14 +8,14 @@ def load_ids(args):
     with open(ids_file,'r') as opened_file:
         ids = json.load(opened_file)
     for key, value in ids.items():
-            args[key] = value
+            args.sign[key] = value
 
 def generate_filenames(args, phase):
     # get train/val/test filenames list
     load_ids(args)
 
     filenames = list()
-    for id in args[phase]:
+    for id in args.sign[phase]:
         img_filename = args.img_directory.format(subject=id)
         label_filename = args.label_directory.format(subject=id)
         if exists(img_filename) and exists(label_filename):

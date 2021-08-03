@@ -21,5 +21,5 @@ def adjust_lr_v2(optim, lr):
 
 def one_hot_3d(tensor, n_classes=20):
     n ,s, h, w = tensor.size()
-    one_hot = torch.zeros(n, n_classes, s, h, w).scatter_(1, tensor.view(n, 1, s, h, w), 1)
+    one_hot = torch.zeros(n, n_classes, s, h, w).scatter_(1, tensor.type(torch.int64).view(n, 1, s, h, w), 1)
     return one_hot

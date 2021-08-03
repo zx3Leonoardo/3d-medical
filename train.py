@@ -5,15 +5,14 @@ from torch._C import device
 import torch.optim as optim
 from dataset.dataset import coronary_dataset
 import torch
-from torch.utils.data import Dataloader
+from torch.utils.data import DataLoader
 import json
 import os
 import argparse
 from config.config import *
 from model.Unet import Unet
-import tqdm
-from utils import weights_init, losses, common, logger, metrics
-
+from tqdm import tqdm
+from .utils import common, logger, losses, metrics, weights_init
 
 def parse_arg():
     parser = argparse.ArgumentParser()
@@ -26,7 +25,7 @@ def train(model, epoch, train_loader, device, optimizer, loss_func, n_labels, al
     print("=====Epoch:{}=====lr:{}".format(epoch, optimizer.state_dict()['param_groups'][0]['lr']))
     model.train()
     train_loss = metrics.LossAverage()
-    train_dice = metrics.DiceAverage()
+    train_dice = metrics.DiceAverage(n_labels)
     
     for idx, (data, target) in tqdm(enumerate(train_loader), total=len(train_loader)):
         data, target = data.float(), target.long()
@@ -38,24 +37,25 @@ def train(model, epoch, train_loader, device, optimizer, loss_func, n_labels, al
         loss0 = loss_func(output[0], target)
         loss1 = loss_func(output[1], target)
         loss2 = loss_func(output[2], target)
-        loss3 = loss_func(output[3], target)
-        loss = loss3 + alpha*(loss0+loss1+loss2)
+        #loss3 = loss_func(output[3], target)
+        #loss = loss3 + alpha*(loss0+loss1+loss2)
+        loss = loss2+alpha*(loss0+loss1)
         loss.backward()
         optimizer.step()
 
-        train_dice.update(output[3], target)
-        train_loss.update(loss3.item(), data.size(0)) #not clamp loss
+        train_dice.update(output[2], target)
+        train_loss.update(loss2.item(), data.size(0)) #not clamp loss
 
-        val_log = OrderedDict({'Train_Loss':train_loss.avg, 'Train_dice':train_dice.avg})
-        return val_log
+        val_log = OrderedDict({'Train_Loss':train_loss.avg, 'Train_dice':train_dice.avg[1]})
+    return val_log
 
 
 def val(model, val_loader, loss_func, n_labels, device):
     model.eval()
     val_loss = metrics.LossAverage()
-    val_dice = metrics.DiceAverage()
+    val_dice = metrics.DiceAverage(n_labels)
     with torch.no_grad():
-        for idx, (data, target) in tqdm(enumerate(val_loader, total=len(val_loader))):
+        for idx, (data, target) in tqdm(enumerate(val_loader), total=len(val_loader)):
             data, target = data.float(), target.float()
             target = common.one_hot_3d(target, n_labels)
             data, target = data.to(device), target.to(device)
@@ -77,10 +77,10 @@ def main():
     device = torch.device('cuda')
 
     #dataset
-    trainset = coronary_dataset(args, "training")
-    testset = coronary_dataset(args, "test")
-    train_loader = Dataloader(trainset, batch_size=args.batch_size, num_workers=args.threads, shuffle=True)
-    test_loader = Dataloader(testset, batch_size=args.batch_size, num_workers=args.threads, shuffle=True)
+    trainset = coronary_dataset(args, "training_ids")
+    testset = coronary_dataset(args, "test_ids")
+    train_loader = DataLoader(trainset, batch_size=args.batch_size, num_workers=args.threads, shuffle=True)
+    test_loader = DataLoader(testset, batch_size=args.batch_size, num_workers=args.threads, shuffle=True)
 
     #model
     model = Unet(in_channel=1, out_channel=args.n_labels, training=True).to(device)
@@ -128,5 +128,6 @@ def main():
                 break
         torch.cuda.empty_cache()
 
-
+if __name__=='__main__':
+    main()
 

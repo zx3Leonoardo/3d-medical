@@ -1,16 +1,17 @@
 from torch.utils.data import Dataset
 import SimpleITK as sitk
-from filename import generate_filenames
+from .filename import generate_filenames
 import torch
 import os
 import numpy as np
-from transforms import *
+from .transforms import *
 
 class coronary_dataset(Dataset):
     def __init__(self, args, phase) -> None:
         super().__init__()
         self.args = args
         self.transforms = Compose([
+            RandomCrop(args.crop_size),
             RandomFlip_lr(0.5),
             RandomFlip_ud(0.5),
         ])
@@ -24,6 +25,7 @@ class coronary_dataset(Dataset):
         label_path = self.filenames[index][1]
         img = sitk.ReadImage(img_path)
         label = sitk.ReadImage(label_path)
+        img, label = Resize(img, label)
         img_array = sitk.GetArrayFromImage(img)
         label_array = sitk.GetArrayFromImage(label)
 

@@ -20,7 +20,7 @@ class TrainLogger():
         self.update_tensorboard(item)
 
     def update_csv(self, item):
-        tmp = pd.DataFram(item, index=[0])
+        tmp = pd.DataFrame(item, index=[0])
         if self.log is not None:
             self.log = self.log.append(tmp, ignore_index=True)
         else:
@@ -33,4 +33,3 @@ class TrainLogger():
         epoch = item['epoch']
         for key, value in item.items():
             if key!= 'epoch':self.summary.add_scalar(key, value, epoch)
-            
