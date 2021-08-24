@@ -1,17 +1,16 @@
-from random import shuffle
 from typing import OrderedDict
-from numpy.lib.twodim_base import tri
-from torch._C import device
 import torch.optim as optim
-from dataset.dataset import coronary_dataset
-import torch
+from dataset.dataset import *
 from torch.utils.data import DataLoader
-import json
+import torch.nn as nn
+
 import os
+import numpy as np
 import argparse
-from config.config import *
-from model.Unet import Unet
 from tqdm import tqdm
+
+from config.config import *
+from model.Unet import *
 from .utils import common, logger, losses, metrics, weights_init
 
 def parse_arg():
