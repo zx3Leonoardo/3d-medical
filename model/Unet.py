@@ -18,22 +18,22 @@ class Unet(nn.Module):
 
         self.map4 = nn.Sequential(
             nn.Conv3d(20, out_channel, 1, 1),
-            nn.Upsample(scale_factor=(1,2,2), mode='trilinear'),
+            nn.Upsample(scale_factor=(1,1,1), mode='trilinear'),
             nn.Softmax(dim=1)
         )
         self.map3 = nn.Sequential(
             nn.Conv3d(64, out_channel, 1, 1),
-            nn.Upsample(scale_factor=(4,8,8), mode='trilinear'),
+            nn.Upsample(scale_factor=(4,4,4), mode='trilinear'),
             nn.Softmax(dim=1)
         )
         self.map2 = nn.Sequential(
             nn.Conv3d(128, out_channel, 1, 1),
-            nn.Upsample(scale_factor=(8,16,16), mode='trilinear'),
+            nn.Upsample(scale_factor=(8,8,8), mode='trilinear'),
             nn.Softmax(dim=1)
         )
         self.map1 = nn.Sequential(
             nn.Conv3d(256, out_channel, 1, 1),
-            nn.Upsample(scale_factor=(16,32,32), mode='trilinear'),
+            nn.Upsample(scale_factor=(16,16,16), mode='trilinear'),
             nn.Softmax(dim=1)
         )
     
@@ -54,7 +54,7 @@ class Unet(nn.Module):
         x = torch.add(x, t2)
         output3 = self.map3(x)
         x = F.relu(F.interpolate(self.decoder2(x), scale_factor=(2,2,2), mode='trilinear'))
-        x = torch.abs(x, t1)
+        x = torch.add(x, t1)
 
         x = F.relu(F.interpolate(self.decoder1(x), scale_factor=(2,2,2), mode='trilinear'))
         output4 = self.map4(x)
