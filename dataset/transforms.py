@@ -1,19 +1,66 @@
 import random
-from torch._C import float32
+from numpy.lib.function_base import kaiser
+from torch._C import dtype, float32
 import torch.nn.functional as F
 import SimpleITK as sitk
 import numpy as np
 import torch
 
-# class Resize:
-#     def __init__(self, scale) -> None:
-#         self.scale = scale
+class maxpool3d:
+    # set kernel and stride to get img smaller in every dim
+    def __init__(self, kernel, stride) -> None:
+        self.kernel = kernel
+        self.stride = stride
     
-#     def __call__(self, img, label):
-#         img, label = img.unsqueeze(0), label.unsqueeze(0).float()
-#         img = F.interpolate(img, scale_factor=(1, self.scale, self.scale), mode='trilinear', recompute_scale_factor=True)
-#         label = F.interpolate(label, scale_factor=(1, self.scale, self.scale), mode='trilinear', recompute_scale_factor=True)
-#         return img[0], label[0]
+    def _mxp3d(self, img):
+        img = torch.squeeze(img).numpy()
+        n = np.int64((np.array(img.shape) - self.kernel) / self.stride) + 1
+        imgn = np.empty([self.kernel*self.kernel*self.kernel] + n.tolist(), img.dtype)
+        grid = np.indices((self.kernel, self.kernel, self.kernel))
+        az = np.arange(n[0]) * self.kernel
+        ay = np.arange(n[1]) * self.kernel
+        ax = np.arange(n[2]) * self.kernel
+        for i, c in enumerate(grid.reshape(3, -1).T):
+            iz = (az + c[0])[..., None, None]
+            iy = (ay + c[1])[None, ..., None]
+            ix = (az + c[2])[None, None, ...]
+            imgn[i] = img[iz, iy, ix]
+        return torch.unsqueeze(torch.from_numpy(np.max(imgn, 0)), 0)
+    
+    def __call__(self, img):
+        return self._mxp3d(img)
+
+class normTo1:
+    # normalize all input voxel to self.value 
+    def __init__(self) -> None:
+        self.value = 1
+    
+    def _nT1(self, img):
+        img = img.numpy()
+        img[img==2] = 1
+        img = torch.from_numpy(img)
+        return img
+
+    def __call__(self, img):
+        return self._nT1(img)
+
+class zCenterCrop:
+    # padding or crop input image dim z to zlength
+    # pad on both side & crop on both side
+    def __init__(self, zlength) -> None:
+        self.zlength = zlength
+    
+    def _zCtrCrp(self, img):
+        if self.zlength>=img.size()[1]:
+            pd0 = (self.zlength - img.size()[1]) // 2
+            return F.pad(img, (0, 0, 0, 0, pd0, pd0))
+        else:
+            st = (img.size()[1] - self.zlength) // 2
+            return img[:, st:st+self.zlength, :]
+    
+    def __call__(self, img):
+        return self._zCtrCrp(img)
+
 class RandomCrop:
     def __init__(self, slices):
         self.slices =  slices

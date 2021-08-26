@@ -39,9 +39,16 @@ class DiceAverage(object):
     @staticmethod
     def get_dices(logits, targets):
         dices = []
-        for class_id in range(targets.size()[1]):
-            inter = torch.sum(logits[:, class_id, :, :, :] * targets[:, class_id, :, :, :])
-            union = torch.sum(logits[:, class_id, :, :, :] + targets[:, class_id, :, :, :])
+        max_element, _ = logits.max(dim=1)
+        max_element = max_element.unsqueeze(1).repeat(1, logits.size()[1], 1, 1, 1)
+        ge = torch.ge(logits, max_element)
+        one = torch.ones_like(logits)
+        zero = torch.zeros_like(logits)
+        res = torch.where(ge, one, zero)
+
+        for class_id in range(res.size()[1]):
+            inter = torch.sum(res[:, class_id, :, :, :] * res[:, class_id, :, :, :])
+            union = torch.sum(res[:, class_id, :, :, :] + res[:, class_id, :, :, :])
             dice = (2. * inter+1)/(union+1)
             dices.append(dice.item())
         return np.asarray(dices)

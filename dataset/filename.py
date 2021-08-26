@@ -3,8 +3,11 @@ import json
 import os
 root = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
-def load_ids(args):
-    ids_file = os.path.join(root, "config", args.ids_filename)
+def load_ids(args, phase):
+    if phase=='inference_id':
+        ids_file = os.path.join(root, "config", args.inference_ids_filename)
+    else:
+        ids_file = os.path.join(root, "config", args.ids_filename)
     with open(ids_file,'r') as opened_file:
         ids = json.load(opened_file)
     for key, value in ids.items():
@@ -12,7 +15,7 @@ def load_ids(args):
 
 def generate_filenames(args, phase):
     # get train/val/test filenames list
-    load_ids(args)
+    load_ids(args, phase)
 
     filenames = list()
     for id in args.sign[phase]:
